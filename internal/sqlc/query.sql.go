@@ -51,7 +51,7 @@ func (q *Queries) GetAuthor(ctx context.Context, id int64) (Author, error) {
 
 const listAuthors = `-- name: ListAuthors :many
 SELECT id, name, bio FROM authors
-ORDER BY name
+ORDER BY id
 `
 
 func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
@@ -75,4 +75,21 @@ func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateAuthor = `-- name: UpdateAuthor :exec
+UPDATE authors
+SET name = ?, bio = ?
+WHERE id = ?
+`
+
+type UpdateAuthorParams struct {
+	Name string
+	Bio  sql.NullString
+	ID   int64
+}
+
+func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) error {
+	_, err := q.db.ExecContext(ctx, updateAuthor, arg.Name, arg.Bio, arg.ID)
+	return err
 }

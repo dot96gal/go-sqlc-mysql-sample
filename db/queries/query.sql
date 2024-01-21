@@ -4,7 +4,7 @@ WHERE id = ? LIMIT 1;
 
 -- name: ListAuthors :many
 SELECT * FROM authors
-ORDER BY name;
+ORDER BY id;
 
 -- name: CreateAuthor :execresult
 INSERT INTO authors (
@@ -12,6 +12,11 @@ INSERT INTO authors (
 ) VALUES (
   ?, ?
 );
+
+-- name: UpdateAuthor :exec
+UPDATE authors
+SET name = ?, bio = ?
+WHERE id = ?;
 
 -- name: DeleteAuthor :exec
 DELETE FROM authors
