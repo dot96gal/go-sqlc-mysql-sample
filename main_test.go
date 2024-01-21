@@ -90,9 +90,12 @@ func TestMain(m *testing.M) {
 	}
 	mig, err := migrate.NewWithDatabaseInstance(schemaFiles, "mysql", driver)
 	if err != nil {
+		log.Fatalf("Could not instantiate migrate: %s", err)
+	}
+	err = mig.Up()
+	if err != nil {
 		log.Fatalf("Could not migrate database: %s", err)
 	}
-	mig.Up()
 
 	code := m.Run()
 
