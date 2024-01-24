@@ -14,6 +14,12 @@ type Author struct {
 	Bio  sql.NullString
 }
 
+type Book struct {
+	ID          int64
+	Title       string
+	PublisherID int64
+}
+
 type Publisher struct {
 	ID   int64
 	Name string

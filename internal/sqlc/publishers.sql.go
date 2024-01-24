@@ -44,6 +44,53 @@ func (q *Queries) GetPublisher(ctx context.Context, id int64) (Publisher, error)
 	return i, err
 }
 
+const getPublisherBooks = `-- name: GetPublisherBooks :many
+SELECT
+  p.id AS publisher_id,
+  p.name AS publisher_name,
+  b.id AS book_id,
+  b.title AS book_title
+FROM publishers AS p
+INNER JOIN books AS b
+ON p.id = b.publisher_id
+WHERE p.id = ?
+`
+
+type GetPublisherBooksRow struct {
+	PublisherID   int64
+	PublisherName string
+	BookID        int64
+	BookTitle     string
+}
+
+func (q *Queries) GetPublisherBooks(ctx context.Context, id int64) ([]GetPublisherBooksRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPublisherBooks, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPublisherBooksRow
+	for rows.Next() {
+		var i GetPublisherBooksRow
+		if err := rows.Scan(
+			&i.PublisherID,
+			&i.PublisherName,
+			&i.BookID,
+			&i.BookTitle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPublishers = `-- name: ListPublishers :many
 SELECT id, name FROM publishers
 ORDER BY id

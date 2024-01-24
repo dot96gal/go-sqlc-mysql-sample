@@ -262,3 +262,107 @@ func TestListPublisher(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPublisherBooks(t *testing.T) {
+	tests := []struct {
+		scenario string
+		input    struct {
+			publisherParams string
+			bookParams      []sqlc.CreateBookParams
+		}
+		expected []sqlc.GetPublisherBooksRow
+	}{
+		{
+			scenario: "get publisher books",
+			input: struct {
+				publisherParams string
+				bookParams      []sqlc.CreateBookParams
+			}{
+				publisherParams: "publisher001",
+				bookParams: []sqlc.CreateBookParams{
+					{
+						Title: "book001",
+					},
+					{
+						Title: "book002",
+					},
+				},
+			},
+			expected: []sqlc.GetPublisherBooksRow{
+				{
+					PublisherName: "publisher001",
+					BookTitle:     "book001",
+				},
+				{
+					PublisherName: "publisher001",
+					BookTitle:     "book002",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.scenario, func(t *testing.T) {
+			queries := sqlc.New(db)
+
+			// test with transaction
+			tx, err := db.Begin()
+			if err != nil {
+				t.Error(err)
+			}
+			t.Cleanup(func() {
+				err = tx.Rollback()
+				if err != nil {
+					t.Error(err)
+				}
+			})
+
+			queries = queries.WithTx(tx)
+
+			// crete publisher
+			ctx := context.Background()
+			publisher, err := queries.CreatePublisher(ctx, tt.input.publisherParams)
+			if err != nil {
+				t.Error(err)
+			}
+
+			insertedPublisherID, err := publisher.LastInsertId()
+			if err != nil {
+				t.Error(err)
+			}
+
+			// create book
+			insertedBookIDs := []int64{}
+			for _, params := range tt.input.bookParams {
+				params.PublisherID = insertedPublisherID
+				book, err := queries.CreateBook(ctx, params)
+				if err != nil {
+					t.Error(err)
+				}
+
+				insertedBookID, err := book.LastInsertId()
+				if err != nil {
+					t.Error(err)
+				}
+
+				insertedBookIDs = append(insertedBookIDs, insertedBookID)
+			}
+
+			// get publisher books
+			publisherBooks, err := queries.GetPublisherBooks(ctx, insertedPublisherID)
+			if err != nil {
+				t.Error(err)
+			}
+
+			for i := range insertedBookIDs {
+				tt.expected[i].PublisherID = insertedPublisherID
+				tt.expected[i].BookID = insertedBookIDs[i]
+
+				if publisherBooks[i] != tt.expected[i] {
+					t.Errorf("got=%v, want=%v", publisherBooks, tt.expected)
+				}
+			}
+		})
+	}
+}

@@ -21,3 +21,14 @@ WHERE id = ?;
 -- name: DeletePublisher :exec
 DELETE FROM publishers
 WHERE id = ?;
+
+-- name: GetPublisherBooks :many
+SELECT
+  p.id AS publisher_id,
+  p.name AS publisher_name,
+  b.id AS book_id,
+  b.title AS book_title
+FROM publishers AS p
+INNER JOIN books AS b
+ON p.id = b.publisher_id
+WHERE p.id = ?;
