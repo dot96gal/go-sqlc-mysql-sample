@@ -19,12 +19,12 @@ func TestCreateAuthor(t *testing.T) {
 		{
 			scenario: "create author",
 			input: sqlc.CreateAuthorParams{
-				Name: "Brian Kernighan",
-				Bio:  sql.NullString{String: "Co-author of The C Programming Language and The Go Programming Language", Valid: true},
+				Name: "author001",
+				Bio:  sql.NullString{String: "author001", Valid: true},
 			},
 			expected: sqlc.Author{
-				Name: "Brian Kernighan",
-				Bio:  sql.NullString{String: "Co-author of The C Programming Language and The Go Programming Language", Valid: true},
+				Name: "author001",
+				Bio:  sql.NullString{String: "author001", Valid: true},
 			},
 		},
 	}
@@ -55,22 +55,20 @@ func TestCreateAuthor(t *testing.T) {
 				t.Error(err)
 			}
 
-			insertedAuthorID, err := result.LastInsertId()
+			authorID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// get author
-			author, err := queries.GetAuthor(ctx, insertedAuthorID)
+			author, err := queries.GetAuthor(ctx, authorID)
 			if err != nil {
 				t.Error(err)
 			}
 
-			if author.Name != tt.expected.Name {
-				t.Errorf("got=%v, want=%v", author.Name, tt.expected.Name)
-			}
-			if author.Bio != tt.expected.Bio {
-				t.Errorf("got=%v, want=%v", author.Bio, tt.expected.Bio)
+			tt.expected.ID = authorID
+			if author != tt.expected {
+				t.Errorf("got=%v, want=%v", author, tt.expected)
 			}
 		})
 	}
@@ -79,18 +77,30 @@ func TestCreateAuthor(t *testing.T) {
 func TestUpdateAuthor(t *testing.T) {
 	tests := []struct {
 		scenario string
-		input    sqlc.UpdateAuthorParams
+		input    struct {
+			createAuthorParams sqlc.CreateAuthorParams
+			updateAuthorParams sqlc.UpdateAuthorParams
+		}
 		expected sqlc.Author
 	}{
 		{
 			scenario: "update author",
-			input: sqlc.UpdateAuthorParams{
-				Name: "Updated: Brian Kernighan",
-				Bio:  sql.NullString{String: "Updated: Co-author of The C Programming Language and The Go Programming Language", Valid: true},
+			input: struct {
+				createAuthorParams sqlc.CreateAuthorParams
+				updateAuthorParams sqlc.UpdateAuthorParams
+			}{
+				createAuthorParams: sqlc.CreateAuthorParams{
+					Name: "author001",
+					Bio:  sql.NullString{String: "author001", Valid: true},
+				},
+				updateAuthorParams: sqlc.UpdateAuthorParams{
+					Name: "Updated: author001",
+					Bio:  sql.NullString{String: "Updated: author001", Valid: true},
+				},
 			},
 			expected: sqlc.Author{
-				Name: "Updated: Brian Kernighan",
-				Bio:  sql.NullString{String: "Updated: Co-author of The C Programming Language and The Go Programming Language", Valid: true},
+				Name: "Updated: author001",
+				Bio:  sql.NullString{String: "Updated: author001", Valid: true},
 			},
 		},
 	}
@@ -116,35 +126,32 @@ func TestUpdateAuthor(t *testing.T) {
 
 			// crete author
 			ctx := context.Background()
-			input := sqlc.CreateAuthorParams{Name: "", Bio: sql.NullString{String: "", Valid: true}}
-			result, err := queries.CreateAuthor(ctx, input)
+			result, err := queries.CreateAuthor(ctx, tt.input.createAuthorParams)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedAuthorID, err := result.LastInsertId()
+			authorID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// update author
-			tt.input.ID = insertedAuthorID
-			err = queries.UpdateAuthor(ctx, tt.input)
+			tt.input.updateAuthorParams.ID = authorID
+			err = queries.UpdateAuthor(ctx, tt.input.updateAuthorParams)
 			if err != nil {
 				t.Error(err)
 			}
 
 			// get author
-			author, err := queries.GetAuthor(ctx, insertedAuthorID)
+			author, err := queries.GetAuthor(ctx, authorID)
 			if err != nil {
 				t.Error(err)
 			}
 
-			if author.Name != tt.expected.Name {
-				t.Errorf("got=%v, want=%v", author.Name, tt.expected.Name)
-			}
-			if author.Bio != tt.expected.Bio {
-				t.Errorf("got=%v, want=%v", author.Bio, tt.expected.Bio)
+			tt.expected.ID = authorID
+			if author != tt.expected {
+				t.Errorf("got=%v, want=%v", author, tt.expected)
 			}
 		})
 	}
@@ -159,8 +166,8 @@ func TestDeleteAuthor(t *testing.T) {
 		{
 			scenario: "delete author",
 			input: sqlc.CreateAuthorParams{
-				Name: "Brian Kernighan",
-				Bio:  sql.NullString{String: "Co-author of The C Programming Language and The Go Programming Language", Valid: true},
+				Name: "author001",
+				Bio:  sql.NullString{String: "author001", Valid: true},
 			},
 			expected: sql.ErrNoRows,
 		},
@@ -192,19 +199,19 @@ func TestDeleteAuthor(t *testing.T) {
 				t.Error(err)
 			}
 
-			insertedAuthorID, err := result.LastInsertId()
+			authorID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// delete author
-			err = queries.DeleteAuthor(ctx, insertedAuthorID)
+			err = queries.DeleteAuthor(ctx, authorID)
 			if err != nil {
 				t.Error(err)
 			}
 
 			// get author
-			_, err = queries.GetAuthor(ctx, insertedAuthorID)
+			_, err = queries.GetAuthor(ctx, authorID)
 			if err != tt.expected {
 				t.Errorf("got=%v, want=%v", err, tt.expected)
 			}
@@ -212,32 +219,32 @@ func TestDeleteAuthor(t *testing.T) {
 	}
 }
 
-func TestListAuthor(t *testing.T) {
+func TestListAuthors(t *testing.T) {
 	tests := []struct {
 		scenario string
 		input    []sqlc.CreateAuthorParams
 		expected []sqlc.Author
 	}{
 		{
-			scenario: "list author",
+			scenario: "list authors",
 			input: []sqlc.CreateAuthorParams{
 				{
-					Name: "hoge",
-					Bio:  sql.NullString{String: "hoge", Valid: true},
+					Name: "author001",
+					Bio:  sql.NullString{String: "author001", Valid: true},
 				},
 				{
-					Name: "fuga",
-					Bio:  sql.NullString{String: "fuga", Valid: true},
+					Name: "author002",
+					Bio:  sql.NullString{String: "author002", Valid: true},
 				},
 			},
 			expected: []sqlc.Author{
 				{
-					Name: "hoge",
-					Bio:  sql.NullString{String: "hoge", Valid: true},
+					Name: "author001",
+					Bio:  sql.NullString{String: "author001", Valid: true},
 				},
 				{
-					Name: "fuga",
-					Bio:  sql.NullString{String: "fuga", Valid: true},
+					Name: "author002",
+					Bio:  sql.NullString{String: "author002", Valid: true},
 				},
 			},
 		},
@@ -264,25 +271,31 @@ func TestListAuthor(t *testing.T) {
 
 			// crete author
 			ctx := context.Background()
+			authorIDs := []int64{}
 			for _, input := range tt.input {
-				_, err := queries.CreateAuthor(ctx, input)
+				result, err := queries.CreateAuthor(ctx, input)
 				if err != nil {
 					t.Error(err)
 				}
+
+				authorID, err := result.LastInsertId()
+				if err != nil {
+					t.Error(err)
+				}
+
+				authorIDs = append(authorIDs, authorID)
 			}
 
-			// list author
-			results, err := queries.ListAuthors(ctx)
+			// list authors
+			authors, err := queries.ListAuthors(ctx)
 			if err != nil {
 				t.Error(err)
 			}
 
-			for i := 0; i < len(tt.expected); i++ {
-				if results[i].Name != tt.expected[i].Name {
-					t.Errorf("got=%v, want=%v", results[i].Name, tt.expected[i].Name)
-				}
-				if results[i].Bio != tt.expected[i].Bio {
-					t.Errorf("got=%v, want=%v", results[i].Bio, tt.expected[i].Bio)
+			for i := range authorIDs {
+				tt.expected[i].ID = authorIDs[i]
+				if authors[i] != tt.expected[i] {
+					t.Errorf("got=%v, want=%v", authors[i], tt.expected[i])
 				}
 			}
 		})

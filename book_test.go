@@ -13,13 +13,22 @@ import (
 func TestCreateBook(t *testing.T) {
 	tests := []struct {
 		scenario string
-		input    sqlc.CreateBookParams
+		input    struct {
+			publisherName    string
+			createBookParams sqlc.CreateBookParams
+		}
 		expected sqlc.Book
 	}{
 		{
 			scenario: "create book",
-			input: sqlc.CreateBookParams{
-				Title: "book001",
+			input: struct {
+				publisherName    string
+				createBookParams sqlc.CreateBookParams
+			}{
+				publisherName: "publisher001",
+				createBookParams: sqlc.CreateBookParams{
+					Title: "book001",
+				},
 			},
 			expected: sqlc.Book{
 				Title: "book001",
@@ -48,39 +57,38 @@ func TestCreateBook(t *testing.T) {
 
 			// crete publisher
 			ctx := context.Background()
-			publisher, err := queries.CreatePublisher(ctx, "publisher001")
+			publisher, err := queries.CreatePublisher(ctx, tt.input.publisherName)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedPublisherID, err := publisher.LastInsertId()
+			publisherID, err := publisher.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// create book
-			tt.input.PublisherID = insertedPublisherID
-			result, err := queries.CreateBook(ctx, tt.input)
+			tt.input.createBookParams.PublisherID = publisherID
+			result, err := queries.CreateBook(ctx, tt.input.createBookParams)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedBookID, err := result.LastInsertId()
+			bookID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// get book
-			book, err := queries.GetBook(ctx, insertedBookID)
+			book, err := queries.GetBook(ctx, bookID)
 			if err != nil {
 				t.Error(err)
 			}
 
-			if book.Title != tt.expected.Title {
-				t.Errorf("got=%v, want=%v", book.Title, tt.expected.Title)
-			}
-			if book.PublisherID != insertedBookID {
-				t.Errorf("got=%v, want=%v", book.PublisherID, insertedBookID)
+			tt.expected.ID = bookID
+			tt.expected.PublisherID = publisherID
+			if book != tt.expected {
+				t.Errorf("got=%v, want=%v", book, tt.expected)
 			}
 		})
 	}
@@ -89,13 +97,27 @@ func TestCreateBook(t *testing.T) {
 func TestUpdateBook(t *testing.T) {
 	tests := []struct {
 		scenario string
-		input    sqlc.UpdateBookParams
+		input    struct {
+			publisherName    string
+			createBookParams sqlc.CreateBookParams
+			updateBookParams sqlc.UpdateBookParams
+		}
 		expected sqlc.Book
 	}{
 		{
 			scenario: "update book",
-			input: sqlc.UpdateBookParams{
-				Title: "Updated: book001",
+			input: struct {
+				publisherName    string
+				createBookParams sqlc.CreateBookParams
+				updateBookParams sqlc.UpdateBookParams
+			}{
+				publisherName: "publisher001",
+				createBookParams: sqlc.CreateBookParams{
+					Title: "book001",
+				},
+				updateBookParams: sqlc.UpdateBookParams{
+					Title: "Updated: book001",
+				},
 			},
 			expected: sqlc.Book{
 				Title: "Updated: book001",
@@ -124,46 +146,45 @@ func TestUpdateBook(t *testing.T) {
 
 			// create publisher
 			ctx := context.Background()
-			publisher, err := queries.CreatePublisher(ctx, "publisher001")
+			result, err := queries.CreatePublisher(ctx, tt.input.publisherName)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedPublisherID, err := publisher.LastInsertId()
+			publisherID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// crete book
-			input := sqlc.CreateBookParams{Title: "", PublisherID: insertedPublisherID}
-			result, err := queries.CreateBook(ctx, input)
+			tt.input.createBookParams.PublisherID = publisherID
+			result, err = queries.CreateBook(ctx, tt.input.createBookParams)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedBookID, err := result.LastInsertId()
+			bookID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// update book
-			tt.input.ID = insertedBookID
-			err = queries.UpdateBook(ctx, tt.input)
+			tt.input.updateBookParams.ID = bookID
+			err = queries.UpdateBook(ctx, tt.input.updateBookParams)
 			if err != nil {
 				t.Error(err)
 			}
 
 			// get book
-			book, err := queries.GetBook(ctx, insertedBookID)
+			book, err := queries.GetBook(ctx, bookID)
 			if err != nil {
 				t.Error(err)
 			}
 
-			if book.Title != tt.expected.Title {
-				t.Errorf("got=%v, want=%v", book.Title, tt.expected.Title)
-			}
-			if book.PublisherID != insertedBookID {
-				t.Errorf("got=%v, want=%v", book.PublisherID, insertedBookID)
+			tt.expected.ID = bookID
+			tt.expected.PublisherID = publisherID
+			if book != tt.expected {
+				t.Errorf("got=%v, want=%v", book, tt.expected)
 			}
 		})
 	}
@@ -172,14 +193,22 @@ func TestUpdateBook(t *testing.T) {
 func TestDeleteBook(t *testing.T) {
 	tests := []struct {
 		scenario string
-		input    sqlc.CreateBookParams
+		input    struct {
+			publisherName    string
+			createBookParams sqlc.CreateBookParams
+		}
 		expected error
 	}{
 		{
 			scenario: "delete book",
-			input: sqlc.CreateBookParams{
-				Title: "book001",
-			},
+			input: struct {
+				publisherName    string
+				createBookParams sqlc.CreateBookParams
+			}{
+				publisherName: "publisher001",
+				createBookParams: sqlc.CreateBookParams{
+					Title: "book001",
+				}},
 			expected: sql.ErrNoRows,
 		},
 	}
@@ -205,36 +234,36 @@ func TestDeleteBook(t *testing.T) {
 
 			// create publisher
 			ctx := context.Background()
-			publisher, err := queries.CreatePublisher(ctx, "publisher001")
+			result, err := queries.CreatePublisher(ctx, tt.input.publisherName)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedPublisherID, err := publisher.LastInsertId()
+			publisherID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// crete book
-			tt.input.PublisherID = insertedPublisherID
-			result, err := queries.CreateBook(ctx, tt.input)
+			tt.input.createBookParams.PublisherID = publisherID
+			result, err = queries.CreateBook(ctx, tt.input.createBookParams)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedBookID, err := result.LastInsertId()
+			bookID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// delete book
-			err = queries.DeleteBook(ctx, insertedBookID)
+			err = queries.DeleteBook(ctx, bookID)
 			if err != nil {
 				t.Error(err)
 			}
 
 			// get book
-			_, err = queries.GetBook(ctx, insertedBookID)
+			_, err = queries.GetBook(ctx, bookID)
 			if err != tt.expected {
 				t.Errorf("got=%v, want=%v", err, tt.expected)
 			}
@@ -242,20 +271,29 @@ func TestDeleteBook(t *testing.T) {
 	}
 }
 
-func TestListBook(t *testing.T) {
+func TestListBooks(t *testing.T) {
 	tests := []struct {
 		scenario string
-		input    []sqlc.CreateBookParams
+		input    struct {
+			publisherName    string
+			createBookParams []sqlc.CreateBookParams
+		}
 		expected []sqlc.Book
 	}{
 		{
-			scenario: "list book",
-			input: []sqlc.CreateBookParams{
-				{
-					Title: "book001",
-				},
-				{
-					Title: "book002",
+			scenario: "list books",
+			input: struct {
+				publisherName    string
+				createBookParams []sqlc.CreateBookParams
+			}{
+				publisherName: "publisher001",
+				createBookParams: []sqlc.CreateBookParams{
+					{
+						Title: "book001",
+					},
+					{
+						Title: "book002",
+					},
 				},
 			},
 			expected: []sqlc.Book{
@@ -290,37 +328,44 @@ func TestListBook(t *testing.T) {
 
 			// create publisher
 			ctx := context.Background()
-			publisher, err := queries.CreatePublisher(ctx, "publisher001")
+			result, err := queries.CreatePublisher(ctx, tt.input.publisherName)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedPublisherID, err := publisher.LastInsertId()
+			publisherID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// crete book
-			for _, input := range tt.input {
-				input.PublisherID = insertedPublisherID
-				_, err := queries.CreateBook(ctx, input)
+			bookIDs := []int64{}
+			for _, params := range tt.input.createBookParams {
+				params.PublisherID = publisherID
+				result, err := queries.CreateBook(ctx, params)
 				if err != nil {
 					t.Error(err)
 				}
+
+				bookID, err := result.LastInsertId()
+				if err != nil {
+					t.Error(err)
+				}
+
+				bookIDs = append(bookIDs, bookID)
 			}
 
-			// list book
-			results, err := queries.ListBooks(ctx)
+			// list books
+			books, err := queries.ListBooks(ctx)
 			if err != nil {
 				t.Error(err)
 			}
 
-			for i := 0; i < len(tt.expected); i++ {
-				if results[i].Title != tt.expected[i].Title {
-					t.Errorf("got=%v, want=%v", results[i].Title, tt.expected[i].Title)
-				}
-				if results[i].PublisherID != insertedPublisherID {
-					t.Errorf("got=%v, want=%v", results[i].PublisherID, insertedPublisherID)
+			for i := range bookIDs {
+				tt.expected[i].ID = bookIDs[i]
+				tt.expected[i].PublisherID = publisherID
+				if books[i] != tt.expected[i] {
+					t.Errorf("got=%v, want=%v", books[i], tt.expected[i])
 				}
 			}
 		})
@@ -331,21 +376,21 @@ func TestGetBookPublisher(t *testing.T) {
 	tests := []struct {
 		scenario string
 		input    struct {
-			bookParams      sqlc.CreateBookParams
-			publisherParams string
+			createBookParams sqlc.CreateBookParams
+			publisherName    string
 		}
 		expected sqlc.GetBookPublisherRow
 	}{
 		{
 			scenario: "get book publisher",
 			input: struct {
-				bookParams      sqlc.CreateBookParams
-				publisherParams string
+				createBookParams sqlc.CreateBookParams
+				publisherName    string
 			}{
-				bookParams: sqlc.CreateBookParams{
+				createBookParams: sqlc.CreateBookParams{
 					Title: "book001",
 				},
-				publisherParams: "publisher001",
+				publisherName: "publisher001",
 			},
 			expected: sqlc.GetBookPublisherRow{
 				BookTitle:     "book001",
@@ -375,36 +420,36 @@ func TestGetBookPublisher(t *testing.T) {
 
 			// crete publisher
 			ctx := context.Background()
-			publisher, err := queries.CreatePublisher(ctx, tt.input.publisherParams)
+			result, err := queries.CreatePublisher(ctx, tt.input.publisherName)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedPublisherID, err := publisher.LastInsertId()
+			publisherID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// create book
-			tt.input.bookParams.PublisherID = insertedPublisherID
-			book, err := queries.CreateBook(ctx, tt.input.bookParams)
+			tt.input.createBookParams.PublisherID = publisherID
+			result, err = queries.CreateBook(ctx, tt.input.createBookParams)
 			if err != nil {
 				t.Error(err)
 			}
 
-			insertedBookID, err := book.LastInsertId()
+			bookID, err := result.LastInsertId()
 			if err != nil {
 				t.Error(err)
 			}
 
 			// get book publisher
-			bookPublisher, err := queries.GetBookPublisher(ctx, insertedBookID)
+			bookPublisher, err := queries.GetBookPublisher(ctx, bookID)
 			if err != nil {
 				t.Error(err)
 			}
 
-			tt.expected.BookID = insertedBookID
-			tt.expected.PublisherID = insertedPublisherID
+			tt.expected.BookID = bookID
+			tt.expected.PublisherID = publisherID
 
 			if bookPublisher != tt.expected {
 				t.Errorf("got=%v, want=%v", bookPublisher, tt.expected)
