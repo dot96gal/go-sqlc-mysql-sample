@@ -8,50 +8,64 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
-const createAuthor = `-- name: CreateAuthor :execresult
-INSERT INTO authors (
-  name, bio
-) VALUES (
-  ?, ?
-)
+const createAuthor = `-- name: CreateAuthor :exec
+INSERT INTO
+  authors (uuid, name, bio)
+VALUES
+  (?, ?, ?)
 `
 
 type CreateAuthorParams struct {
+	Uuid uuid.UUID
 	Name string
 	Bio  sql.NullString
 }
 
-func (q *Queries) CreateAuthor(ctx context.Context, arg CreateAuthorParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createAuthor, arg.Name, arg.Bio)
+func (q *Queries) CreateAuthor(ctx context.Context, arg CreateAuthorParams) error {
+	_, err := q.db.ExecContext(ctx, createAuthor, arg.Uuid, arg.Name, arg.Bio)
+	return err
 }
 
 const deleteAuthor = `-- name: DeleteAuthor :exec
 DELETE FROM authors
-WHERE id = ?
+WHERE
+  uuid = ?
 `
 
-func (q *Queries) DeleteAuthor(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAuthor, id)
+func (q *Queries) DeleteAuthor(ctx context.Context, argUuid uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteAuthor, argUuid)
 	return err
 }
 
 const getAuthor = `-- name: GetAuthor :one
-SELECT id, name, bio FROM authors
-WHERE id = ? LIMIT 1
+SELECT
+  uuid, name, bio
+FROM
+  authors
+WHERE
+  uuid = ?
+LIMIT
+  1
 `
 
-func (q *Queries) GetAuthor(ctx context.Context, id int64) (Author, error) {
-	row := q.db.QueryRowContext(ctx, getAuthor, id)
+func (q *Queries) GetAuthor(ctx context.Context, argUuid uuid.UUID) (Author, error) {
+	row := q.db.QueryRowContext(ctx, getAuthor, argUuid)
 	var i Author
-	err := row.Scan(&i.ID, &i.Name, &i.Bio)
+	err := row.Scan(&i.Uuid, &i.Name, &i.Bio)
 	return i, err
 }
 
 const listAuthors = `-- name: ListAuthors :many
-SELECT id, name, bio FROM authors
-ORDER BY id
+SELECT
+  uuid, name, bio
+FROM
+  authors
+ORDER BY
+  uuid
 `
 
 func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
@@ -63,7 +77,7 @@ func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
 	var items []Author
 	for rows.Next() {
 		var i Author
-		if err := rows.Scan(&i.ID, &i.Name, &i.Bio); err != nil {
+		if err := rows.Scan(&i.Uuid, &i.Name, &i.Bio); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -79,17 +93,20 @@ func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
 
 const updateAuthor = `-- name: UpdateAuthor :exec
 UPDATE authors
-SET name = ?, bio = ?
-WHERE id = ?
+SET
+  name = ?,
+  bio = ?
+WHERE
+  uuid = ?
 `
 
 type UpdateAuthorParams struct {
 	Name string
 	Bio  sql.NullString
-	ID   int64
+	Uuid uuid.UUID
 }
 
 func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) error {
-	_, err := q.db.ExecContext(ctx, updateAuthor, arg.Name, arg.Bio, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateAuthor, arg.Name, arg.Bio, arg.Uuid)
 	return err
 }

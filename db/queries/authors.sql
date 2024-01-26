@@ -1,23 +1,36 @@
 -- name: GetAuthor :one
-SELECT * FROM authors
-WHERE id = ? LIMIT 1;
+SELECT
+  *
+FROM
+  authors
+WHERE
+  uuid = ?
+LIMIT
+  1;
 
 -- name: ListAuthors :many
-SELECT * FROM authors
-ORDER BY id;
+SELECT
+  *
+FROM
+  authors
+ORDER BY
+  uuid;
 
--- name: CreateAuthor :execresult
-INSERT INTO authors (
-  name, bio
-) VALUES (
-  ?, ?
-);
+-- name: CreateAuthor :exec
+INSERT INTO
+  authors (uuid, name, bio)
+VALUES
+  (?, ?, ?);
 
 -- name: UpdateAuthor :exec
 UPDATE authors
-SET name = ?, bio = ?
-WHERE id = ?;
+SET
+  name = ?,
+  bio = ?
+WHERE
+  uuid = ?;
 
 -- name: DeleteAuthor :exec
 DELETE FROM authors
-WHERE id = ?;
+WHERE
+  uuid = ?;

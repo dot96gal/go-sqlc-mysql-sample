@@ -8,78 +8,89 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 const createAuthorBook = `-- name: CreateAuthorBook :exec
-INSERT INTO author_books (
-  author_id, book_id 
-) VALUES (
-  ?, ?
-)
+INSERT INTO
+  author_books (author_uuid, book_uuid)
+VALUES
+  (?, ?)
 `
 
 type CreateAuthorBookParams struct {
-	AuthorID int64
-	BookID   int64
+	AuthorUuid uuid.UUID
+	BookUuid   uuid.UUID
 }
 
 func (q *Queries) CreateAuthorBook(ctx context.Context, arg CreateAuthorBookParams) error {
-	_, err := q.db.ExecContext(ctx, createAuthorBook, arg.AuthorID, arg.BookID)
+	_, err := q.db.ExecContext(ctx, createAuthorBook, arg.AuthorUuid, arg.BookUuid)
 	return err
 }
 
 const deleteAuthorBook = `-- name: DeleteAuthorBook :exec
 DELETE FROM author_books
-WHERE author_id = ? AND book_id = ?
+WHERE
+  author_uuid = ?
+  AND book_uuid = ?
 `
 
 type DeleteAuthorBookParams struct {
-	AuthorID int64
-	BookID   int64
+	AuthorUuid uuid.UUID
+	BookUuid   uuid.UUID
 }
 
 func (q *Queries) DeleteAuthorBook(ctx context.Context, arg DeleteAuthorBookParams) error {
-	_, err := q.db.ExecContext(ctx, deleteAuthorBook, arg.AuthorID, arg.BookID)
+	_, err := q.db.ExecContext(ctx, deleteAuthorBook, arg.AuthorUuid, arg.BookUuid)
 	return err
 }
 
 const getAuthorBook = `-- name: GetAuthorBook :one
-SELECT author_id, book_id FROM author_books
-WHERE author_id = ? AND book_id = ? LIMIT 1
+SELECT
+  author_uuid, book_uuid
+FROM
+  author_books
+WHERE
+  author_uuid = ?
+  AND book_uuid = ?
+LIMIT
+  1
 `
 
 type GetAuthorBookParams struct {
-	AuthorID int64
-	BookID   int64
+	AuthorUuid uuid.UUID
+	BookUuid   uuid.UUID
 }
 
 func (q *Queries) GetAuthorBook(ctx context.Context, arg GetAuthorBookParams) (AuthorBook, error) {
-	row := q.db.QueryRowContext(ctx, getAuthorBook, arg.AuthorID, arg.BookID)
+	row := q.db.QueryRowContext(ctx, getAuthorBook, arg.AuthorUuid, arg.BookUuid)
 	var i AuthorBook
-	err := row.Scan(&i.AuthorID, &i.BookID)
+	err := row.Scan(&i.AuthorUuid, &i.BookUuid)
 	return i, err
 }
 
 const listAuthorBooks = `-- name: ListAuthorBooks :many
 SELECT
-  a.id AS author_id,
+  a.uuid AS author_uuid,
   a.name AS author_name,
   a.bio AS author_bio,
-  b.id AS book_id,
+  b.uuid AS book_uuid,
   b.title AS book_title
-FROM authors AS a
-INNER JOIN author_books AS ab
-ON a.id = ab.author_id
-INNER JOIN books AS b
-ON ab.book_id = b.id
-ORDER BY a.id, b.id
+FROM
+  authors AS a
+  INNER JOIN author_books AS ab ON a.uuid = ab.author_uuid
+  INNER JOIN books AS b ON ab.book_uuid = b.uuid
+ORDER BY
+  a.uuid,
+  b.uuid
 `
 
 type ListAuthorBooksRow struct {
-	AuthorID   int64
+	AuthorUuid uuid.UUID
 	AuthorName string
 	AuthorBio  sql.NullString
-	BookID     int64
+	BookUuid   uuid.UUID
 	BookTitle  string
 }
 
@@ -93,10 +104,10 @@ func (q *Queries) ListAuthorBooks(ctx context.Context) ([]ListAuthorBooksRow, er
 	for rows.Next() {
 		var i ListAuthorBooksRow
 		if err := rows.Scan(
-			&i.AuthorID,
+			&i.AuthorUuid,
 			&i.AuthorName,
 			&i.AuthorBio,
-			&i.BookID,
+			&i.BookUuid,
 			&i.BookTitle,
 		); err != nil {
 			return nil, err

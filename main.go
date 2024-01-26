@@ -9,6 +9,7 @@ import (
 
 	"github.com/dot96gal/go-sqlc-sample/internal/sqlc"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 )
 
 func run() error {
@@ -34,7 +35,10 @@ func run() error {
 	}
 	log.Println(authors)
 
-	result, err := queries.CreateAuthor(ctx, sqlc.CreateAuthorParams{
+	authorUuid := uuid.New()
+
+	err = queries.CreateAuthor(ctx, sqlc.CreateAuthorParams{
+		Uuid: authorUuid,
 		Name: "Brian Kernighan",
 		Bio:  sql.NullString{String: "Co-author of The C Programming Language and The Go Programming Language", Valid: true},
 	})
@@ -42,17 +46,11 @@ func run() error {
 		return err
 	}
 
-	insertedAuthorID, err := result.LastInsertId()
+	author, err := queries.GetAuthor(ctx, authorUuid)
 	if err != nil {
 		return err
 	}
-	log.Println(insertedAuthorID)
-
-	fetchedAuthor, err := queries.GetAuthor(ctx, insertedAuthorID)
-	if err != nil {
-		return err
-	}
-	log.Println(fetchedAuthor)
+	log.Println(author)
 
 	return nil
 }

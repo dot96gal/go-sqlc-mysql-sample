@@ -1,28 +1,37 @@
 -- name: GetAuthorBook :one
-SELECT * FROM author_books
-WHERE author_id = ? AND book_id = ? LIMIT 1;
+SELECT
+  *
+FROM
+  author_books
+WHERE
+  author_uuid = ?
+  AND book_uuid = ?
+LIMIT
+  1;
 
 -- name: ListAuthorBooks :many
 SELECT
-  a.id AS author_id,
+  a.uuid AS author_uuid,
   a.name AS author_name,
   a.bio AS author_bio,
-  b.id AS book_id,
+  b.uuid AS book_uuid,
   b.title AS book_title
-FROM authors AS a
-INNER JOIN author_books AS ab
-ON a.id = ab.author_id
-INNER JOIN books AS b
-ON ab.book_id = b.id
-ORDER BY a.id, b.id;
+FROM
+  authors AS a
+  INNER JOIN author_books AS ab ON a.uuid = ab.author_uuid
+  INNER JOIN books AS b ON ab.book_uuid = b.uuid
+ORDER BY
+  a.uuid,
+  b.uuid;
 
 -- name: CreateAuthorBook :exec
-INSERT INTO author_books (
-  author_id, book_id 
-) VALUES (
-  ?, ?
-);
+INSERT INTO
+  author_books (author_uuid, book_uuid)
+VALUES
+  (?, ?);
 
 -- name: DeleteAuthorBook :exec
 DELETE FROM author_books
-WHERE author_id = ? AND book_id = ?;
+WHERE
+  author_uuid = ?
+  AND book_uuid = ?;

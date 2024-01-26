@@ -1,35 +1,49 @@
 -- name: GetBook :one
-SELECT * FROM books 
-WHERE id = ? LIMIT 1;
+SELECT
+  *
+FROM
+  books
+WHERE
+  uuid = ?
+LIMIT
+  1;
 
 -- name: ListBooks :many
-SELECT * FROM books
-ORDER BY id;
+SELECT
+  *
+FROM
+  books
+ORDER BY
+  uuid;
 
--- name: CreateBook :execresult
-INSERT INTO books (
-  title,
-  publisher_id
-) VALUES (
-  ?, ?
-);
+-- name: CreateBook :exec
+INSERT INTO
+  books (uuid, title, publisher_uuid)
+VALUES
+  (?, ?, ?);
 
 -- name: UpdateBook :exec
 UPDATE books
-SET title = ?
-WHERE id = ?;
+SET
+  title = ?
+WHERE
+  uuid = ?;
 
 -- name: DeleteBook :exec
 DELETE FROM books
-WHERE id = ?;
+WHERE
+  uuid = ?;
 
 -- name: GetBookPublisher :one
 SELECT
-  b.id AS book_id,
+  b.uuid AS book_uuid,
   b.title AS book_title,
-  p.id AS publisher_id,
+  p.uuid AS publisher_uuid,
   p.name AS publisher_name
-FROM books AS b
-INNER JOIN publishers AS p
-ON b.publisher_id = p.id
-WHERE b.id = ? LIMIT 1;
+FROM
+  books AS b
+  INNER JOIN publishers AS p ON b.publisher_uuid = p.uuid
+WHERE
+  b.uuid = ?
+LIMIT
+  1;

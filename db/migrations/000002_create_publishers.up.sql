@@ -1,4 +1,5 @@
 CREATE TABLE `publishers` (
-  `id`   BIGINT  NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `name` TEXT    NOT NULL
+  `uuid` VARBINARY(36) NOT NULL,
+  `name` TEXT NOT NULL,
+  PRIMARY KEY (`uuid`)
 );

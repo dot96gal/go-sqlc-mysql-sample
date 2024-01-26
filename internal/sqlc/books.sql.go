@@ -7,83 +7,98 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/google/uuid"
 )
 
-const createBook = `-- name: CreateBook :execresult
-INSERT INTO books (
-  title,
-  publisher_id
-) VALUES (
-  ?, ?
-)
+const createBook = `-- name: CreateBook :exec
+INSERT INTO
+  books (uuid, title, publisher_uuid)
+VALUES
+  (?, ?, ?)
 `
 
 type CreateBookParams struct {
-	Title       string
-	PublisherID int64
+	Uuid          uuid.UUID
+	Title         string
+	PublisherUuid uuid.UUID
 }
 
-func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createBook, arg.Title, arg.PublisherID)
+func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) error {
+	_, err := q.db.ExecContext(ctx, createBook, arg.Uuid, arg.Title, arg.PublisherUuid)
+	return err
 }
 
 const deleteBook = `-- name: DeleteBook :exec
 DELETE FROM books
-WHERE id = ?
+WHERE
+  uuid = ?
 `
 
-func (q *Queries) DeleteBook(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteBook, id)
+func (q *Queries) DeleteBook(ctx context.Context, argUuid uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteBook, argUuid)
 	return err
 }
 
 const getBook = `-- name: GetBook :one
-SELECT id, title, publisher_id FROM books 
-WHERE id = ? LIMIT 1
+SELECT
+  uuid, title, publisher_uuid
+FROM
+  books
+WHERE
+  uuid = ?
+LIMIT
+  1
 `
 
-func (q *Queries) GetBook(ctx context.Context, id int64) (Book, error) {
-	row := q.db.QueryRowContext(ctx, getBook, id)
+func (q *Queries) GetBook(ctx context.Context, argUuid uuid.UUID) (Book, error) {
+	row := q.db.QueryRowContext(ctx, getBook, argUuid)
 	var i Book
-	err := row.Scan(&i.ID, &i.Title, &i.PublisherID)
+	err := row.Scan(&i.Uuid, &i.Title, &i.PublisherUuid)
 	return i, err
 }
 
 const getBookPublisher = `-- name: GetBookPublisher :one
 SELECT
-  b.id AS book_id,
+  b.uuid AS book_uuid,
   b.title AS book_title,
-  p.id AS publisher_id,
+  p.uuid AS publisher_uuid,
   p.name AS publisher_name
-FROM books AS b
-INNER JOIN publishers AS p
-ON b.publisher_id = p.id
-WHERE b.id = ? LIMIT 1
+FROM
+  books AS b
+  INNER JOIN publishers AS p ON b.publisher_uuid = p.uuid
+WHERE
+  b.uuid = ?
+LIMIT
+  1
 `
 
 type GetBookPublisherRow struct {
-	BookID        int64
+	BookUuid      uuid.UUID
 	BookTitle     string
-	PublisherID   int64
+	PublisherUuid uuid.UUID
 	PublisherName string
 }
 
-func (q *Queries) GetBookPublisher(ctx context.Context, id int64) (GetBookPublisherRow, error) {
-	row := q.db.QueryRowContext(ctx, getBookPublisher, id)
+func (q *Queries) GetBookPublisher(ctx context.Context, argUuid uuid.UUID) (GetBookPublisherRow, error) {
+	row := q.db.QueryRowContext(ctx, getBookPublisher, argUuid)
 	var i GetBookPublisherRow
 	err := row.Scan(
-		&i.BookID,
+		&i.BookUuid,
 		&i.BookTitle,
-		&i.PublisherID,
+		&i.PublisherUuid,
 		&i.PublisherName,
 	)
 	return i, err
 }
 
 const listBooks = `-- name: ListBooks :many
-SELECT id, title, publisher_id FROM books
-ORDER BY id
+SELECT
+  uuid, title, publisher_uuid
+FROM
+  books
+ORDER BY
+  uuid
 `
 
 func (q *Queries) ListBooks(ctx context.Context) ([]Book, error) {
@@ -95,7 +110,7 @@ func (q *Queries) ListBooks(ctx context.Context) ([]Book, error) {
 	var items []Book
 	for rows.Next() {
 		var i Book
-		if err := rows.Scan(&i.ID, &i.Title, &i.PublisherID); err != nil {
+		if err := rows.Scan(&i.Uuid, &i.Title, &i.PublisherUuid); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -111,16 +126,18 @@ func (q *Queries) ListBooks(ctx context.Context) ([]Book, error) {
 
 const updateBook = `-- name: UpdateBook :exec
 UPDATE books
-SET title = ?
-WHERE id = ?
+SET
+  title = ?
+WHERE
+  uuid = ?
 `
 
 type UpdateBookParams struct {
 	Title string
-	ID    int64
+	Uuid  uuid.UUID
 }
 
 func (q *Queries) UpdateBook(ctx context.Context, arg UpdateBookParams) error {
-	_, err := q.db.ExecContext(ctx, updateBook, arg.Title, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateBook, arg.Title, arg.Uuid)
 	return err
 }

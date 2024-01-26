@@ -6,26 +6,28 @@ package sqlc
 
 import (
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 type Author struct {
-	ID   int64
+	Uuid uuid.UUID
 	Name string
 	Bio  sql.NullString
 }
 
 type AuthorBook struct {
-	AuthorID int64
-	BookID   int64
+	AuthorUuid uuid.UUID
+	BookUuid   uuid.UUID
 }
 
 type Book struct {
-	ID          int64
-	Title       string
-	PublisherID int64
+	Uuid          uuid.UUID
+	Title         string
+	PublisherUuid uuid.UUID
 }
 
 type Publisher struct {
-	ID   int64
+	Uuid uuid.UUID
 	Name string
 }

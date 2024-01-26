@@ -1,6 +1,7 @@
 CREATE TABLE `books` (
-  `id`           BIGINT  NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `title`        TEXT    NOT NULL,
-  `publisher_id` BIGINT  NOT NULL,
-  FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`id`)
+  `uuid` VARBINARY(36) NOT NULL,
+  `title` TEXT NOT NULL,
+  `publisher_uuid` VARBINARY(36) NOT NULL,
+  PRIMARY KEY (`uuid`),
+  FOREIGN KEY (`publisher_uuid`) REFERENCES `publishers` (`uuid`)
 );

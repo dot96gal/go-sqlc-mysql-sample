@@ -1,34 +1,50 @@
 -- name: GetPublisher :one
-SELECT * FROM publishers
-WHERE id = ? LIMIT 1;
+SELECT
+  *
+FROM
+  publishers
+WHERE
+  uuid = ?
+LIMIT
+  1;
 
 -- name: ListPublishers :many
-SELECT * FROM publishers
-ORDER BY id;
+SELECT
+  *
+FROM
+  publishers
+ORDER BY
+  uuid;
 
--- name: CreatePublisher :execresult
-INSERT INTO publishers (
-  name
-) VALUES (
-  ?
-);
+-- name: CreatePublisher :exec
+INSERT INTO
+  publishers (uuid, name)
+VALUES
+  (?, ?);
 
 -- name: UpdatePublisher :exec
 UPDATE publishers
-SET name = ?
-WHERE id = ?;
+SET
+  name = ?
+WHERE
+  uuid = ?;
 
 -- name: DeletePublisher :exec
 DELETE FROM publishers
-WHERE id = ?;
+WHERE
+  uuid = ?;
 
 -- name: GetPublisherBooks :many
 SELECT
-  p.id AS publisher_id,
+  p.uuid AS publisher_uuid,
   p.name AS publisher_name,
-  b.id AS book_id,
+  b.uuid AS book_uuid,
   b.title AS book_title
-FROM publishers AS p
-INNER JOIN books AS b
-ON p.id = b.publisher_id
-WHERE p.id = ?;
+FROM
+  publishers AS p
+  INNER JOIN books AS b ON p.uuid = b.publisher_uuid
+WHERE
+  p.uuid = ?
+ORDER BY
+  p.uuid,
+  b.uuid;
