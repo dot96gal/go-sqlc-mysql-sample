@@ -1,4 +1,4 @@
-module github.com/dot96gal/go-sqlc-sample
+module github.com/dot96gal/go-sqlc-mysql-sample
 
 go 1.21.1
 

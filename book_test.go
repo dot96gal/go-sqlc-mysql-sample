@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/dot96gal/go-sqlc-sample/internal/sqlc"
+	"github.com/dot96gal/go-sqlc-mysql-sample/internal/sqlc"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"

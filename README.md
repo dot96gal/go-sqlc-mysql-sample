@@ -1,4 +1,4 @@
-# go-sqlc-sample
+# go-sqlc-mysql-sample
 
 ## setup
 
