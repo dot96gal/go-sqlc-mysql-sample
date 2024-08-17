@@ -1,6 +1,6 @@
 module github.com/dot96gal/go-sqlc-mysql-sample
 
-go 1.21.1
+go 1.22.1
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
