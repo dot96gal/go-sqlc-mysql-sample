@@ -3,7 +3,7 @@ module github.com/dot96gal/go-sqlc-mysql-sample
 go 1.22.1
 
 require (
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.9.0
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/google/uuid v1.6.0
 	github.com/ory/dockertest/v3 v3.11.0
