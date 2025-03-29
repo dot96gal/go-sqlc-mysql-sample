@@ -21,7 +21,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.59
+          version: v2.0
           args: ./...
 
       - name: Test
